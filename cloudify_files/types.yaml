@@ -1,0 +1,36 @@
+data_types:
+
+  cloudify.datatypes.File:
+    properties:
+      resource_path:
+        description: >
+          The path relative to the blueprint where the file is stored.
+          Currently this must be packaged in the blueprint. An external URI is not valid.
+        required: true
+      file_path:
+        description: >
+          The path on the machine where the file should be saved.
+        required: true
+      owner:
+        description: >
+          The owner string, such as "centos:wheel"
+        required: true
+      mode:
+        description: >
+          The file permissions, such as "0777".
+        required: true
+
+node_types:
+
+  cloudify.nodes.File:
+    derived_from: cloudify.nodes.Root
+    properties:
+      resource_config:
+        type: cloudify.datatypes.File
+        required: true
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: cfy_files.cloudify_files.tasks.create
+        delete:
+          implementation: cfy_files.cloudify_files.tasks.delete

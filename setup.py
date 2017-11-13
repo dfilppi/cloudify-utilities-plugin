@@ -16,12 +16,13 @@ import setuptools
 
 setuptools.setup(
     name='cloudify-utilities-plugin',
-    version='1.3.1',
+    version='1.4.0',
     author='Gigaspaces.com',
     author_email='hello@getcloudify.org',
     description='Utilities for extending Cloudify',
     packages=['cloudify_deployment_proxy',
               'cloudify_ssh_key',
+              'cloudify_files',
               'cloudify_terminal',
               'cloudify_configuration',
               'cloudify_custom_workflow',
