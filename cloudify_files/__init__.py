@@ -79,7 +79,7 @@ class CloudifyFile(object):
                 self.owner, self.file_path))
             chmod_out = execute_command('sudo chmod {0} {1}'.format(
                 self.mode, self.file_path))
-            if not cp_out or not chown_out or not chmod_out:
+            if cp_out or chown_out or chmod_out:
                 raise NonRecoverableError('Failed, check logs.')
             return True
 
@@ -108,10 +108,7 @@ class CloudifyFile(object):
         try:
             os.rename(downloaded_file_path, self.file_path)
             os.chown(self.file_path, uid, gid)
-            os.chmod(
-                self.file_path,
-                int(self.mode) if not
-                isinstance(self.mode, int) else self.mode)
+            os.chmod(self.mode, self.file_path)
         except OSError as e:
             raise NonRecoverableError('{0}'.format(str(e)))
 

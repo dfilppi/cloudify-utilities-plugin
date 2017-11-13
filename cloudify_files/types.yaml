@@ -21,7 +21,7 @@ data_types:
       mode:
         type: string
         description: >
-          The file permissions, such as "0777".
+          The file permissions, such as "0777". Integer representations will not be handled correctly.
         required: true
       use_sudo:
         type: boolean

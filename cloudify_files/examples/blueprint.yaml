@@ -12,6 +12,6 @@ node_templates:
     properties:
       resource_config:
         resource_path: resources/docker.repo
-        file_path: /etc/yum.repo.d/docker.repo
+        file_path: /etc/yum.repos.d/docker.repo
         owner: root:root
-        mode: 0644
+        mode: '0644'
