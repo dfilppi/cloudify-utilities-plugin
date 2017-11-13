@@ -21,6 +21,7 @@ import testtools
 
 from cloudify.mocks import MockCloudifyContext
 from cloudify_files import tasks as operation_task
+from cloudify.exceptions import NonRecoverableError
 from cloudify.state import current_ctx
 
 
@@ -103,6 +104,24 @@ class CloudifyFilesTestBase(testtools.TestCase):
                 os.X_OK))
         file_stat = os.stat(self._file_path)
         self.assertEqual(self._user_id, getattr(file_stat, 'st_uid'))
+
+    def test_operation_create_from_inputs_no_file(self):
+        """Test the create function with inputs"""
+
+        _ctx = self.get_mock_ctx()
+        current_ctx.set(_ctx)
+        resource_config = self._resource_config
+        resource_config['file_path'] = \
+            '/aint/no/platform/in/the/world/with/this/dumb/path' \
+            'yet'
+        self.addCleanup(os.remove, self._file_path)
+        raised_error = self.assertRaises(
+            NonRecoverableError,
+            operation_task.create,
+            resource_config=resource_config)
+        self.assertIn(
+            'No such file or directory',
+            raised_error.message)
 
     def test_operation_create_from_inputs(self):
         """Test the create function with inputs"""

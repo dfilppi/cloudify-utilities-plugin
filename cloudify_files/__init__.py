@@ -69,36 +69,52 @@ class CloudifyFile(object):
         return config
 
     def create(self):
+
         downloaded_file_path = ctx.download_resource(self.resource_path)
-        if not self.use_sudo:
-            if not isinstance(self.owner, basestring):
-                raise NonRecoverableError('Property owner must be a string.')
-            split_owner = self.owner.split(':')
-            if len(split_owner) == 1:
-                user_string = split_owner[0]
-                group_string = split_owner[0]
-            elif len(split_owner) == 2:
-                user_string = split_owner[0]
-                group_string = split_owner[1]
-            else:
-                raise NonRecoverableError(
-                    'Property owner must be one of the following '
-                    'formats: "user" or "user:group".')
-            os.rename(downloaded_file_path, self.file_path)
+
+        if self.use_sudo:
+            cp_out = execute_command('sudo cp {0} {1}'.format(
+                downloaded_file_path, self.file_path))
+            chown_out = execute_command('sudo chown {0} {1}'.format(
+                self.owner, self.file_path))
+            chmod_out = execute_command('sudo chmod {0} {1}'.format(
+                self.mode, self.file_path))
+            if not cp_out or not chown_out or not chmod_out:
+                raise NonRecoverableError('Failed, check logs.')
+            return True
+
+        if not isinstance(self.owner, basestring):
+            raise NonRecoverableError('Property owner must be a string.')
+
+        split_owner = self.owner.split(':')
+
+        if len(split_owner) == 1:
+            user_string = split_owner[0]
+            group_string = split_owner[0]
+        elif len(split_owner) == 2:
+            user_string = split_owner[0]
+            group_string = split_owner[1]
+        else:
+            raise NonRecoverableError(
+                'Property owner must be one of the following '
+                'formats: "user" or "user:group".')
+
+        try:
             uid = pwd.getpwnam(user_string).pw_uid
             gid = grp.getgrnam(group_string).gr_gid
+        except KeyError as e:
+            raise NonRecoverableError('{0}'.format(str(e)))
+
+        try:
+            os.rename(downloaded_file_path, self.file_path)
             os.chown(self.file_path, uid, gid)
             os.chmod(
                 self.file_path,
                 int(self.mode) if not
                 isinstance(self.mode, int) else self.mode)
-            return True
-        execute_command('sudo cp {0} {1}'.format(
-            downloaded_file_path, self.file_path))
-        execute_command('sudo chown {0} {1}'.format(
-            self.owner, self.file_path))
-        execute_command('sudo chmod {0} {1}'.format(
-            self.mode, self.file_path))
+        except OSError as e:
+            raise NonRecoverableError('{0}'.format(str(e)))
+
         return True
 
     def delete(self):
