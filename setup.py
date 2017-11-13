@@ -30,7 +30,7 @@ setuptools.setup(
               'cloudify_cloudinit'],
     license='LICENSE',
     install_requires=[
-        'cloudify-plugins-common>=4.0',
+        'cloudify-plugins-common>=3.4.2',
         'cloudify-rest-client>=4.0',
         'paramiko',  # for ssh netconf connection
         "Jinja2>=2.7.2",  # for template support
