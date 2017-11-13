@@ -12,9 +12,13 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
+import grp
+import os
+import pwd
 import subprocess
 
 from cloudify import ctx
+from cloudify.exceptions import NonRecoverableError
 
 
 def execute_command(_command, extra_args=None):
@@ -54,6 +58,7 @@ class CloudifyFile(object):
         self.file_path = self.config.get('file_path')
         self.owner = self.config.get('owner')
         self.mode = self.config.get('mode')
+        self.use_sudo = self.config.get('use_sudo')
 
     @staticmethod
     def get_config(inputs):
@@ -65,6 +70,29 @@ class CloudifyFile(object):
 
     def create(self):
         downloaded_file_path = ctx.download_resource(self.resource_path)
+        if not self.use_sudo:
+            if not isinstance(self.owner, basestring):
+                raise NonRecoverableError('Property owner must be a string.')
+            split_owner = self.owner.split(':')
+            if len(split_owner) == 1:
+                user_string = split_owner[0]
+                group_string = split_owner[0]
+            elif len(split_owner) == 2:
+                user_string = split_owner[0]
+                group_string = split_owner[1]
+            else:
+                raise NonRecoverableError(
+                    'Property owner must be one of the following '
+                    'formats: "user" or "user:group".')
+            os.rename(downloaded_file_path, self.file_path)
+            uid = pwd.getpwnam(user_string).pw_uid
+            gid = grp.getgrnam(group_string).gr_gid
+            os.chown(self.file_path, uid, gid)
+            os.chmod(
+                self.file_path,
+                int(self.mode) if not
+                isinstance(self.mode, int) else self.mode)
+            return True
         execute_command('sudo cp {0} {1}'.format(
             downloaded_file_path, self.file_path))
         execute_command('sudo chown {0} {1}'.format(
@@ -74,5 +102,8 @@ class CloudifyFile(object):
         return True
 
     def delete(self):
+        if not self.use_sudo:
+            os.remove(self.file_path)
+            return True
         execute_command('sudo rm {0}'.format(self.file_path))
         return True

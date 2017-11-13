@@ -38,8 +38,12 @@ class CloudifyFilesTestBase(testtools.TestCase):
 
     @property
     def _owner(self):
+        # For circle.ci.
         _user = os.environ.get('USER', 'ubuntu')
         _group = os.environ.get('GROUP', 'ubuntu')
+        # Toggle these for local testing.
+        # _user = os.environ.get('USER', 'my_user')
+        # _group = os.environ.get('GROUP', 'my_group')
         return ':'.join([_user, _group])
 
     @property
@@ -59,7 +63,8 @@ class CloudifyFilesTestBase(testtools.TestCase):
             'resource_path': 'resources/file',
             'owner': self._owner,
             'mode': '0644',
-            'file_path': self._file_path
+            'file_path': self._file_path,
+            'use_sudo': False
         }
         return _resource_config
 
@@ -136,6 +141,55 @@ class CloudifyFilesTestBase(testtools.TestCase):
 
         _ctx = self.get_mock_ctx()
         current_ctx.set(_ctx)
+        resource_config = self._resource_config
+        # self.addCleanup(os.remove, self._file_path)
+        operation_output = \
+            operation_task.create(resource_config=resource_config)
+        self.common_asserts(operation_output)
+        operation_task.delete(resource_config=resource_config)
+        self.assertIs(False, os.path.exists(resource_config.get('file_path')))
+
+    def test_operation_create_from_inputs_sudo(self):
+        """Test the create function with inputs"""
+
+        _ctx = self.get_mock_ctx()
+        current_ctx.set(_ctx)
+        self._resource_config['use_sudo'] = True
+        resource_config = self._resource_config
+        self.addCleanup(os.remove, self._file_path)
+        operation_output = \
+            operation_task.create(resource_config=resource_config)
+        self.common_asserts(operation_output)
+
+    def test_operation_create_from_node_properties_sudo(self):
+        """Test the create function with node properties"""
+
+        _ctx = self.get_mock_ctx()
+        current_ctx.set(_ctx)
+        self._resource_config['use_sudo'] = True
+        _ctx.node.properties['resource_config'] = self._resource_config
+        self.addCleanup(os.remove, self._file_path)
+        operation_output = operation_task.create()
+        self.common_asserts(operation_output)
+
+    def test_operation_create_from_runtime_properties_sudo(self):
+        """Test the create function with runtime properties"""
+
+        _ctx = self.get_mock_ctx()
+        current_ctx.set(_ctx)
+        self._resource_config['use_sudo'] = True
+        _ctx.instance.runtime_properties['resource_config'] = \
+            self._resource_config
+        self.addCleanup(os.remove, self._file_path)
+        operation_output = operation_task.create()
+        self.common_asserts(operation_output)
+
+    def test_operation_delete_sudo(self):
+        """Test the create function with runtime properties"""
+
+        _ctx = self.get_mock_ctx()
+        current_ctx.set(_ctx)
+        self._resource_config['use_sudo'] = True
         resource_config = self._resource_config
         # self.addCleanup(os.remove, self._file_path)
         operation_output = \

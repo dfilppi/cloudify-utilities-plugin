@@ -8,7 +8,7 @@ imports:
 node_templates:
 
   docker_yum_repo:
-    type: cloudify.nodes.Files
+    type: cloudify.nodes.File
     properties:
       resource_config:
         resource_path: resources/docker.repo
